@@ -2,10 +2,9 @@ package dev.mkeo102.logger;
 
 import java.io.PrintStream;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+import java.util.MissingFormatArgumentException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,7 +42,7 @@ public class Logger implements TerminalColors {
     }
 
     public void log(LoggerType type, String message) {
-        String formatted = String.format("%s[%s] [%tT] %s%s", type.getTerminalColor(), type.getTypeInfo(), LocalDateTime.now(), message, RESET);
+        String formatted = format("%s[%s] [%tT] %s%s", type.getTerminalColor(), type.getTypeInfo(), LocalDateTime.now(), message, RESET);
         this.outputs.forEach(out -> out.println(formatted));
     }
 
@@ -150,17 +149,23 @@ public class Logger implements TerminalColors {
         this.outputs.remove(stream);
     }
 
-    private static String format(String format, Object... args) {
+    static String format(String format, Object... args) {
         if(args == null) args = new Object[]{null};
 
         Pattern replacePattern = Pattern.compile("(?<!\\\\)\\{[^}]*}");
 
-        for(Object o : args) {
 
+        for(Object o : args) {
+            Matcher match = replacePattern.matcher(format);
             String safeArg = o == null ? "null" : Matcher.quoteReplacement(o.toString());
 
-            format = replacePattern.matcher(format).replaceFirst(safeArg);
+            if(!match.find()) throw new IllegalArgumentException(format("Too many arguments provided for format string: {}", format.replace("{", "\\{")));
+            format = match.replaceFirst(safeArg);
         }
+
+        if(replacePattern.matcher(format).find()) throw new MissingFormatArgumentException(format);
+
+        format = format.replace("\\{", "{");
 
         return format;
     }
