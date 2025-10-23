@@ -11,11 +11,12 @@ import java.util.regex.Pattern;
 @SuppressWarnings("unused")
 public class Logger implements TerminalColors {
 
+    private static boolean muted = false;
+
     private List<PrintStream> outputs = new ArrayList<>();
     private final String name;
 
     private final boolean debug;
-
 
     private Logger(Class<?> clazz) {
         this.name = clazz.getName();
@@ -42,12 +43,15 @@ public class Logger implements TerminalColors {
     }
 
     public void log(LoggerType type, String message) {
-        String formatted = format("%s[%s] [%tT] %s%s", type.getTerminalColor(), type.getTypeInfo(), LocalDateTime.now(), message, RESET);
+        if(muted()) return;
+        // Using String.format here for the time formatting
+        String formatted = String.format("%s[%s] [%tT] %s%s", type.getTerminalColor(), type.getTypeInfo(), LocalDateTime.now(), message, RESET);
         this.outputs.forEach(out -> out.println(formatted));
     }
 
     public void silentLog(LoggerType type, String message) {
-        String formatted = String.format("%s %s%s", type.getTerminalColor(), message, RESET);
+        if(muted()) return;
+        String formatted = format("{color} {message}{color-reset}", type.getTerminalColor(), message, RESET);
         outputs.forEach(out -> out.println(formatted));
     }
 
@@ -71,7 +75,6 @@ public class Logger implements TerminalColors {
         info(format(message, formats));
     }
 
-
     public void warning() {
         warning("");
     }
@@ -84,7 +87,6 @@ public class Logger implements TerminalColors {
 
         warning(format(message, formats));
     }
-
 
     public void error(String message) {
         log(new ErrorType(), message);
@@ -168,6 +170,14 @@ public class Logger implements TerminalColors {
         format = format.replace("\\{", "{");
 
         return format;
+    }
+
+    public static void setMuted(boolean muted) {
+        Logger.muted = muted;
+    }
+
+    public static boolean muted() {
+        return muted;
     }
 
     private static class InfoType extends LoggerType {

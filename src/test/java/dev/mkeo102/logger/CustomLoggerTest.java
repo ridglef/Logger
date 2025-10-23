@@ -3,6 +3,7 @@ package dev.mkeo102.logger;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
@@ -135,5 +136,54 @@ class CustomLoggerTest {
         }
     }
 
+    @Test
+    public void testMuting() throws UnsupportedEncodingException {
+        Logger.setMuted(true);
+        {
+            Logger logger = Logger.getLogger("Test");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final String utf8 = StandardCharsets.UTF_8.name();
+
+            PrintStream ps = new PrintStream(baos, true, utf8);
+
+            logger.addOutput(ps);
+            logger.info("This is a test");
+
+            assert baos.toString(utf8).isEmpty();
+        }
+
+        Logger.setMuted(false);
+
+        {
+            Logger logger = Logger.getLogger("Test");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final String utf8 = StandardCharsets.UTF_8.name();
+
+            PrintStream ps = new PrintStream(baos, true, utf8);
+
+            logger.addOutput(ps);
+            logger.info("This is a test");
+
+            assert baos.toString(utf8).contains("This is a test");
+        }
+
+        Logger.setMuted(true);
+
+        {
+            Logger logger = Logger.getLogger("Test");
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            final String utf8 = StandardCharsets.UTF_8.name();
+
+            PrintStream ps = new PrintStream(baos, true, utf8);
+
+            logger.addOutput(ps);
+            logger.info("This is a test");
+
+            assert baos.toString(utf8).isEmpty();
+        }
+
+        Logger.setMuted(false);
+
+    }
 
 }
