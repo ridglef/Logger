@@ -132,7 +132,14 @@ class CustomLoggerTest {
             String correct = String.format("This is a test of the formatter's escaping : {} %s", true);
             String custom = Logger.format("This is a test of the formatter's escaping : \\{} {}", true);
 
-            assertEquals(correct, custom, "Failed to format with a boolean");
+            assertEquals(correct, custom, "Failed to format with an escape");
+        }
+
+        {
+            String correct = String.format("This is a test of the formatter's escaping format strings : %s", "{working}");
+            String custom = Logger.format("This is a test of the formatter's escaping format strings : {}", "{working}");
+
+            assertEquals(correct, custom, "Failed to format with an arg that contains a format identifier");
         }
     }
 

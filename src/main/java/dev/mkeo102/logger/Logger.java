@@ -159,10 +159,10 @@ public class Logger implements TerminalColors {
 
         for(Object o : args) {
             Matcher match = replacePattern.matcher(format);
-            String safeArg = o == null ? "null" : Matcher.quoteReplacement(o.toString());
+            String safeArg = o == null ? "null" : Matcher.quoteReplacement(escape(o.toString()));
 
-            if(!match.find()) throw new IllegalArgumentException(format("Too many arguments provided for format string: {}", format.replace("{", "\\{")));
-            format = match.replaceFirst(escape(safeArg));
+            if(!match.find()) throw new IllegalArgumentException(format("Too many arguments provided for format string: {}", escape(format)));
+            format = match.replaceFirst(safeArg);
         }
 
         if(replacePattern.matcher(format).find()) throw new MissingFormatArgumentException(format);
