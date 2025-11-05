@@ -162,7 +162,7 @@ public class Logger implements TerminalColors {
             String safeArg = o == null ? "null" : Matcher.quoteReplacement(o.toString());
 
             if(!match.find()) throw new IllegalArgumentException(format("Too many arguments provided for format string: {}", format.replace("{", "\\{")));
-            format = match.replaceFirst(safeArg);
+            format = match.replaceFirst(escape(safeArg));
         }
 
         if(replacePattern.matcher(format).find()) throw new MissingFormatArgumentException(format);
@@ -170,6 +170,10 @@ public class Logger implements TerminalColors {
         format = format.replace("\\{", "{");
 
         return format;
+    }
+
+    static String escape(String input ){
+        return input.replace("{", "\\{");
     }
 
     public static void setMuted(boolean muted) {
