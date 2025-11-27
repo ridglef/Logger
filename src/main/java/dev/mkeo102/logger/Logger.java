@@ -1,6 +1,11 @@
 package dev.mkeo102.logger;
 
+import java.awt.*;
+import java.io.OutputStream;
 import java.io.PrintStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -10,6 +15,7 @@ import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
 public class Logger implements TerminalColors {
+    private final ErrorPath errorPath;
 
     private static boolean muted = false;
 
@@ -18,28 +24,56 @@ public class Logger implements TerminalColors {
 
     private final boolean debug;
 
-    private Logger(Class<?> clazz) {
+    public static class ErrorPath {
+        private final String light;
+        private final URL host;
+        private final String key;
+
+        public ErrorPath(String light, URL host, String key) {
+            this.light = light;
+            this.host = host;
+            this.key = key;
+        }
+
+        public String getLight() {
+            return light;
+        }
+
+        public URL getHost() {
+            return host;
+        }
+
+        public String getKey() {
+            return key;
+        }
+    }
+
+    private Logger(Class<?> clazz, ErrorPath errorPath) {
         this.name = clazz.getName();
         this.debug = false;
         this.outputs.add(System.out);
+        this.errorPath = errorPath;
     }
 
-    private Logger(String name) {
+    private Logger(String name, ErrorPath errorPath) {
         this.name = name;
         this.debug = false;
         this.outputs.add(System.out);
+        this.errorPath = errorPath;
     }
 
-    private Logger(Class<?> clazz, boolean debug) {
+    private Logger(Class<?> clazz, boolean debug, ErrorPath errorPath) {
         this.name = clazz.getName();
         this.debug = debug;
         this.outputs.add(System.out);
+        this.errorPath = errorPath;
     }
 
-    private Logger(String name, boolean debug) {
+    private Logger(String name, boolean debug, ErrorPath errorPath) {
         this.name = name;
         this.debug = debug;
         this.outputs.add(System.out);
+        this.errorPath = errorPath;
     }
 
     public void log(LoggerType type, String message) {
@@ -89,7 +123,7 @@ public class Logger implements TerminalColors {
     }
 
     public void error(String message) {
-        log(new ErrorType(), message);
+        log(new ErrorType(errorPath), message);
     }
 
     public void error() {
@@ -122,20 +156,20 @@ public class Logger implements TerminalColors {
     }
 
 
-    public static Logger getLogger(Class<?> clazz) {
-        return new Logger(clazz);
+    public static Logger getLogger(Class<?> clazz, ErrorPath errorPath) {
+        return new Logger(clazz, errorPath);
     }
 
-    static Logger getLogger(String name) {
-        return new Logger(name);
+    static Logger getLogger(String name, ErrorPath errorPath) {
+        return new Logger(name, errorPath);
     }
 
-    public static Logger getLogger(Class<?> clazz, boolean debug) {
-        return new Logger(clazz, debug);
+    public static Logger getLogger(Class<?> clazz, boolean debug, ErrorPath errorPath) {
+        return new Logger(clazz, debug, errorPath);
     }
 
-    static Logger getLogger(String name, boolean debug) {
-        return new Logger(name, debug);
+    static Logger getLogger(String name, boolean debug, ErrorPath errorPath) {
+        return new Logger(name, debug, errorPath);
     }
 
     public void addOutput(PrintStream stream) {
@@ -199,10 +233,32 @@ public class Logger implements TerminalColors {
     }
 
     private static class ErrorType extends LoggerType {
-        public static final ErrorType instance = new ErrorType();
-
-        public ErrorType() {
+        public ErrorType(ErrorPath errorPath) {
             super("ERROR", RED);
+            try {
+                HttpURLConnection conn = (HttpURLConnection) errorPath.getHost().openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Authorization", "Bearer " + errorPath.getKey());
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+
+                String payload = String.format(
+                        "{ \"entity_id\": \"%s\", \"rgb_color\": [%d, %d, %d], \"brightness\": 255 }",
+                        errorPath.light,
+                        Color.RED.getRed(),
+                        Color.RED.getGreen(),
+                        Color.RED.getBlue()
+                );
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = payload.getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+
+                conn.getResponseCode();
+            } catch (Exception exception) {
+                exception.printStackTrace();
+            }
         }
     }
 
