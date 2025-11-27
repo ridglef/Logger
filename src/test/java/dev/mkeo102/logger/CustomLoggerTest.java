@@ -4,17 +4,33 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class CustomLoggerTest {
+    public static final Logger.ErrorPath example;
+
+    static {
+        try {
+            example = new Logger.ErrorPath("light.krank_bulb", // ur bulb name
+            new URI("http://192.168.1.120:8123/api/services/light/turn_on").toURL(), // uput ur host here
+                    "ur permanet key");
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Test
     void testMultipleOutput() throws Exception {
 
-      Logger logger = Logger.getLogger("Test");
+      Logger logger = Logger.getLogger("Test",example);
 
       ByteArrayOutputStream baos = new ByteArrayOutputStream();
       final String utf8 = StandardCharsets.UTF_8.name();
@@ -30,7 +46,8 @@ class CustomLoggerTest {
     @Test
     void testDebugEffectiveness() throws Exception{
       {
-        Logger logger = Logger.getLogger("Test", false);
+        Logger logger = Logger.getLogger("Test", false,example);
+        logger.error("KRANK!");
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final String utf8 = StandardCharsets.UTF_8.name();
@@ -44,7 +61,7 @@ class CustomLoggerTest {
       }
 
       {
-        Logger logger = Logger.getLogger("Test", true);
+        Logger logger = Logger.getLogger("Test", true,example);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final String utf8 = StandardCharsets.UTF_8.name();
@@ -62,7 +79,7 @@ class CustomLoggerTest {
     @Test
     public void testExceptionPrinter() throws Throwable {
         {
-            Logger logger = Logger.getLogger("Test", true);
+            Logger logger = Logger.getLogger("Test", true,example);
 
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final String utf8 = StandardCharsets.UTF_8.name();
@@ -147,7 +164,7 @@ class CustomLoggerTest {
     public void testMuting() throws UnsupportedEncodingException {
         Logger.setMuted(true);
         {
-            Logger logger = Logger.getLogger("Test");
+            Logger logger = Logger.getLogger("Test",example);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final String utf8 = StandardCharsets.UTF_8.name();
 
@@ -162,7 +179,7 @@ class CustomLoggerTest {
         Logger.setMuted(false);
 
         {
-            Logger logger = Logger.getLogger("Test");
+            Logger logger = Logger.getLogger("Test",example);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final String utf8 = StandardCharsets.UTF_8.name();
 
@@ -177,7 +194,7 @@ class CustomLoggerTest {
         Logger.setMuted(true);
 
         {
-            Logger logger = Logger.getLogger("Test");
+            Logger logger = Logger.getLogger("Test",example);
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             final String utf8 = StandardCharsets.UTF_8.name();
 
